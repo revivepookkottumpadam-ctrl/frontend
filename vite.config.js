@@ -4,15 +4,25 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
-  
+
   return {
     plugins: [
       react(),
       VitePWA({
         registerType: 'autoUpdate',
-        devOptions: {
-          enabled: true
+
+        // ✅ THIS IS THE MOST IMPORTANT PART
+        workbox: {
+          cleanupOutdatedCaches: true,
+          clientsClaim: true,
+          skipWaiting: true
         },
+
+        // ❌ Disable dev SW to avoid confusion
+        devOptions: {
+          enabled: false
+        },
+
         manifest: {
           id: '/',
           name: 'Revive Fitness',
