@@ -246,6 +246,7 @@ export default function DashboardPage() {
             name: member.name || "",
             email: member.email || "",
             phone: member.phone || "",
+            weight: member.weight || "",
             membershipType: member.membershipType || "monthly",
             startDate: formatDateForInput(member.startDate),
             endDate: formatDateForInput(member.endDate),

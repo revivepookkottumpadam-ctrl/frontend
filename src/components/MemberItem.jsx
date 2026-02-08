@@ -80,11 +80,10 @@ const MemberItem = React.memo(({
 
                     {/* Payment Status Badge below image */}
                     <div
-                        className={`px-3 py-1 rounded-full ${
-                            member.paymentStatus === "paid" 
-                                ? "bg-green-600" 
+                        className={`px-3 py-1 rounded-full ${member.paymentStatus === "paid"
+                                ? "bg-green-600"
                                 : "bg-red-500"
-                        }`}
+                            }`}
                     >
                         <span className="text-xs font-bold text-white capitalize">
                             {member.paymentStatus}
@@ -98,16 +97,21 @@ const MemberItem = React.memo(({
                     <h3 className="font-bold text-white text-base md:text-lg mb-1 truncate">
                         {member.name}
                     </h3>
-                    
+
                     {/* Email */}
                     <p className="text-gray-300 text-sm mb-0.5 truncate">
                         {member.email || "member@revivefitness.com"}
                     </p>
-                    
-                    {/* Phone */}
-                    <p className="text-gray-300 text-sm mb-2">
-                        {member.phone}
-                    </p>
+
+                    {/* Phone & Weight */}
+                    <div className="flex items-center gap-3 text-gray-300 text-sm mb-2">
+                        <span>{member.phone}</span>
+                        {member.weight > 0 && (
+                            <span className="bg-gray-800 px-2 py-0.5 rounded text-xs font-bold text-gray-400">
+                                {member.weight} kg
+                            </span>
+                        )}
+                    </div>
 
                     {/* Membership Type and End Date */}
                     <div className="flex justify-between items-center text-sm font-semibold text-gray-300">

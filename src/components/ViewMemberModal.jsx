@@ -100,8 +100,8 @@ const ViewMemberModal = ({
                             <span className="text-gray-300 font-bold">Payment Status</span>
                             <span
                                 className={`px-3 py-1 rounded-full text-xs font-bold text-white capitalize ${(member.paymentStatus || "unpaid") === "paid"
-                                        ? "bg-green-600"
-                                        : "bg-red-600"
+                                    ? "bg-green-600"
+                                    : "bg-red-600"
                                     }`}
                             >
                                 {member.paymentStatus || "unpaid"}
@@ -124,6 +124,11 @@ const ViewMemberModal = ({
                                 }`}>
                                 {getDaysRemaining(member.endDate)} days
                             </span>
+                        </div>
+
+                        <div className="flex justify-between items-center pt-2 border-t border-gray-700">
+                            <span className="text-gray-300 font-bold">Weight</span>
+                            <span className="text-white font-bold">{member.weight ? `${member.weight} kg` : "Not recorded"}</span>
                         </div>
                     </div>
 

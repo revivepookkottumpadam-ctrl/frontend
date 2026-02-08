@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { X, Camera, Calendar } from "lucide-react";
 
 // Simple helpers
@@ -33,6 +33,7 @@ const MemberForm = ({
         name: "",
         email: "",
         phone: "",
+        weight: "",
         membershipType: "monthly",
         startDate: "",
         endDate: "",
@@ -40,36 +41,44 @@ const MemberForm = ({
         photo: null,
     });
 
+    // Track if this is a fresh load of data (to avoid overwriting custom DB dates on open)
+    const isDataLoaded = useRef(false);
+
     // Initialize form data
     useEffect(() => {
         if (initialData && isEdit) {
-            setFormData(initialData);
+            setFormData({
+                ...initialData,
+                photo: null, // Always reset photo file on load
+            });
+            isDataLoaded.current = true;
         } else if (!visible) {
             // Reset form when modal closes
             setFormData({
                 name: "",
                 email: "",
                 phone: "",
+                weight: "",
                 membershipType: "monthly",
                 startDate: "",
                 endDate: "",
                 paymentStatus: "unpaid",
                 photo: null,
             });
+            isDataLoaded.current = false;
+        } else {
+            // Fresh add mode
+            isDataLoaded.current = false;
         }
     }, [initialData, isEdit, visible]);
 
     // Auto-calculate end date and payment status
     useEffect(() => {
-        // Prevent auto-calculation overwriting existing data on edit load
-        if (isEdit && initialData) {
-            const hasStartDateChanged = formData.startDate !== initialData.startDate;
-            const hasTypeChanged = formData.membershipType !== initialData.membershipType;
-
-            // If neither has changed, do NOT recalculate. Retain the existing endDate.
-            if (!hasStartDateChanged && !hasTypeChanged) {
-                return;
-            }
+        // If we just loaded member data for editing, skip the first calculation 
+        // to preserve any custom dates stored in the database.
+        if (isEdit && isDataLoaded.current) {
+            isDataLoaded.current = false;
+            return;
         }
 
         if (formData.startDate && formData.membershipType) {
@@ -77,6 +86,7 @@ const MemberForm = ({
                 formData.startDate,
                 formData.membershipType
             );
+
             if (calculatedEndDate !== formData.endDate) {
                 const autoStatus = getAutoPaymentStatus(calculatedEndDate);
                 setFormData((prev) => ({
@@ -86,12 +96,62 @@ const MemberForm = ({
                 }));
             }
         }
-    }, [formData.startDate, formData.membershipType, isEdit, initialData]);
+    }, [formData.startDate, formData.membershipType, isEdit]);
 
-    const handlePhotoChange = (e) => {
+    const compressImage = async (file) => {
+        return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = (event) => {
+                const img = new Image();
+                img.src = event.target.result;
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const MAX_WIDTH = 800;
+                    const MAX_HEIGHT = 800;
+                    let width = img.width;
+                    let height = img.height;
+
+                    if (width > height) {
+                        if (width > MAX_WIDTH) {
+                            height *= MAX_WIDTH / width;
+                            width = MAX_WIDTH;
+                        }
+                    } else {
+                        if (height > MAX_HEIGHT) {
+                            width *= MAX_HEIGHT / height;
+                            height = MAX_HEIGHT;
+                        }
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    canvas.toBlob((blob) => {
+                        const compressedFile = new File([blob], file.name, {
+                            type: 'image/jpeg',
+                            lastModified: Date.now(),
+                        });
+                        resolve(compressedFile);
+                    }, 'image/jpeg', 0.7); // 0.7 quality is usually plenty
+                };
+            };
+        });
+    };
+
+    const handlePhotoChange = async (e) => {
         const file = e.target.files[0];
         if (file) {
-            setFormData({ ...formData, photo: file });
+            // Show some sort of feedback or just do it silently
+            // iPhone photos are usually huge, so compression is key
+            if (file.size > 1024 * 1024) { // Only compress if larger than 1MB
+                const compressed = await compressImage(file);
+                setFormData({ ...formData, photo: compressed });
+            } else {
+                setFormData({ ...formData, photo: file });
+            }
         }
     };
 
@@ -164,6 +224,22 @@ const MemberForm = ({
                             placeholder="e.g., +919876543210"
                             value={formData.phone}
                             onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                            disabled={loading}
+                        />
+                    </div>
+
+                    {/* Weight */}
+                    <div>
+                        <label className="block text-sm font-bold text-white mb-2">
+                            Weight <span className="text-xs font-normal text-gray-400">(in kg)</span>
+                        </label>
+                        <input
+                            type="number"
+                            step="0.1"
+                            className="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                            placeholder="e.g., 75.5"
+                            value={formData.weight}
+                            onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
                             disabled={loading}
                         />
                     </div>
